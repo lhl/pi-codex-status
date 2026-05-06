@@ -14,7 +14,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "pi": {
     "extensions": [
@@ -31,7 +32,9 @@
     "codex",
     "chatgpt",
     "usage",
-    "quota"
+    "quota",
+    "status",
+    "pi"
   ],
   "author": "Leonard Lin",
   "license": "MIT",

@@ -80,7 +80,7 @@ Options:
 
 ## Pi extension
 
-Install the local package into pi:
+Install into pi:
 
 ```bash
 pi install https://github.com/lhl/pi-codex-status
@@ -112,3 +112,5 @@ npm install
 npm run check
 npm test
 ```
+
+Release checklist: [`docs/PUBLISH.md`](docs/PUBLISH.md).
