@@ -111,7 +111,7 @@ Commands:
 /codex-status        # alias, in case another extension claims /status
 ```
 
-The extension also sets a compact footer status such as:
+In interactive pi, `/status` renders as a themed custom message instead of a plain markdown code block. The extension also sets a compact footer status such as:
 
 ```text
 Codex 5h:95% left 7d:97% left pro reset:18:43 credits:553

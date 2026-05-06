@@ -1,11 +1,14 @@
+import { Text } from "@mariozechner/pi-tui";
+type ThemeLike = {
+    fg?: (name: string, text: string) => string;
+    bold?: (text: string) => string;
+};
 type CommandContext = {
     hasUI?: boolean;
     ui?: {
         notify?: (message: string, level?: "info" | "warning" | "error" | "success") => void;
         setStatus?: (key: string, text?: string) => void;
-        theme?: {
-            fg?: (name: string, text: string) => string;
-        };
+        theme?: ThemeLike;
     };
 };
 type PiApi = {
@@ -19,6 +22,10 @@ type PiApi = {
         handler: (args: string, ctx: CommandContext) => Promise<void> | void;
     }) => void;
     on: (event: string, handler: (event: any, ctx: CommandContext) => Promise<void> | void) => void;
+    registerMessageRenderer?: (customType: string, renderer: (message: {
+        content: string;
+        details?: unknown;
+    }, options: unknown, theme: ThemeLike) => Text) => void;
     sendMessage?: (message: {
         customType: string;
         content: string;

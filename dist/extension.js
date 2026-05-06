@@ -1,3 +1,4 @@
+import { Text } from "@mariozechner/pi-tui";
 import { readCachedSnapshot, writeCachedSnapshot } from "./cache.js";
 import { formatJson, formatStatus, formatStatusline } from "./format.js";
 import { parseCodexRateLimitHeaders } from "./rate-limits.js";
@@ -5,17 +6,29 @@ import { getCodexUsage } from "./usage.js";
 const STATUS_KEY = "codex-status";
 const MESSAGE_TYPE = "codex-status";
 const CACHE_TTL_MS = 60_000;
+function getUi(ctx) {
+    try {
+        return ctx.ui;
+    }
+    catch {
+        // Pi invalidates extension contexts after reload/session shutdown. Background refreshes
+        // can finish after that boundary; treat stale UI access as a no-op.
+        return undefined;
+    }
+}
 function dim(ctx, text) {
-    return ctx.ui?.theme?.fg ? ctx.ui.theme.fg("dim", text) : text;
+    const ui = getUi(ctx);
+    return ui?.theme?.fg ? ui.theme.fg("dim", text) : text;
 }
 function setFooterStatus(ctx, snapshot) {
-    if (!ctx.ui?.setStatus)
+    const ui = getUi(ctx);
+    if (!ui?.setStatus)
         return;
     if (!snapshot) {
-        ctx.ui.setStatus(STATUS_KEY, undefined);
+        ui.setStatus(STATUS_KEY, undefined);
         return;
     }
-    ctx.ui.setStatus(STATUS_KEY, dim(ctx, formatStatusline(snapshot)));
+    ui.setStatus(STATUS_KEY, dim(ctx, formatStatusline(snapshot)));
 }
 function mergeLimit(existing, update) {
     if (!existing)
@@ -53,15 +66,69 @@ function mergeSnapshots(existing, update) {
 }
 function messageFor(kind, snapshot) {
     if (kind === "json")
-        return `\`\`\`json\n${formatJson(snapshot)}\n\`\`\``;
+        return formatJson(snapshot);
     if (kind === "raw")
-        return `\`\`\`json\n${JSON.stringify(snapshot.raw ?? snapshot, null, 2)}\n\`\`\``;
+        return JSON.stringify(snapshot.raw ?? snapshot, null, 2);
     if (kind === "statusline")
-        return `\`\`\`\n${formatStatusline(snapshot)}\n\`\`\``;
-    return `\`\`\`\n${formatStatus(snapshot)}\n\`\`\``;
+        return formatStatusline(snapshot);
+    return formatStatus(snapshot);
 }
 function unfence(content) {
     return content.replace(/^```(?:json)?\n/, "").replace(/\n```$/, "");
+}
+function color(theme, name, text) {
+    try {
+        return theme.fg?.(name, text) ?? text;
+    }
+    catch {
+        return text;
+    }
+}
+function bold(theme, text) {
+    try {
+        return theme.bold?.(text) ?? text;
+    }
+    catch {
+        return text;
+    }
+}
+function colorForLeftPercent(leftPercent) {
+    if (leftPercent >= 60)
+        return "success";
+    if (leftPercent >= 25)
+        return "warning";
+    return "error";
+}
+function colorizeStatusLine(line, theme) {
+    let out = line;
+    const barMatch = line.match(/(\[[█░]+\])\s+(\d+(?:\.\d+)?)% left/);
+    if (barMatch?.[1] && barMatch[2]) {
+        const barText = barMatch[1];
+        const pctText = barMatch[2];
+        const leftPercent = Number(pctText);
+        const statusColor = colorForLeftPercent(Number.isFinite(leftPercent) ? leftPercent : 0);
+        out = out.replace(barText, color(theme, statusColor, barText));
+        out = out.replace(`${pctText}% left`, color(theme, statusColor, `${pctText}% left`));
+    }
+    out = out.replace(">_ Codex usage", color(theme, "accent", bold(theme, ">_ Codex usage")));
+    out = out.replace(/(Account|Updated|5h limit|Weekly limit|Credits):/g, (label) => color(theme, "muted", label));
+    out = out.replace(/(Visit https:\/\/chatgpt\.com\/codex\/settings\/usage for up-to-date|information on rate limits and credits)/g, (text) => color(theme, "dim", text));
+    out = out.replace(/(GPT-[^:]+ limit:)/g, (text) => color(theme, "accent", bold(theme, text)));
+    if (out.startsWith("╭") || out.startsWith("╰"))
+        return color(theme, "dim", out);
+    if (out.startsWith("│") && out.endsWith("│")) {
+        return `${color(theme, "dim", out[0] ?? "")}${out.slice(1, -1)}${color(theme, "dim", out.at(-1) ?? "")}`;
+    }
+    return out;
+}
+function colorizeStatusText(content, theme) {
+    return unfence(content)
+        .split("\n")
+        .map((line) => colorizeStatusLine(line, theme))
+        .join("\n");
+}
+function renderStatusMessage(message, _options, theme) {
+    return new Text(colorizeStatusText(message.content, theme), 0, 0);
 }
 function emitStatus(pi, ctx, content, details) {
     if (ctx.hasUI === false) {
@@ -99,6 +166,7 @@ function parseCommandArgs(args) {
     return { kind, refresh };
 }
 export default function codexUsageExtension(pi) {
+    pi.registerMessageRenderer?.(MESSAGE_TYPE, renderStatusMessage);
     const command = {
         description: "Show ChatGPT Codex quota/limits (5h, weekly, credits)",
         getArgumentCompletions: (prefix) => {
@@ -128,7 +196,7 @@ export default function codexUsageExtension(pi) {
                     includeRaw: parsed.kind === "raw",
                 });
                 setFooterStatus(ctx, snapshot);
-                emitStatus(pi, ctx, messageFor(parsed.kind, snapshot), snapshot);
+                emitStatus(pi, ctx, messageFor(parsed.kind, snapshot), { kind: parsed.kind, snapshot });
             }
             catch (error) {
                 ctx.ui?.notify?.(`Codex usage unavailable: ${error instanceof Error ? error.message : String(error)}`, "error");

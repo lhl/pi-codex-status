@@ -1,15 +1,21 @@
+import { Text } from "@mariozechner/pi-tui";
 import { readCachedSnapshot, writeCachedSnapshot } from "./cache.js";
 import { formatJson, formatStatus, formatStatusline } from "./format.js";
 import { parseCodexRateLimitHeaders } from "./rate-limits.js";
 import type { CodexUsageSnapshot, RateLimit } from "./types.js";
 import { getCodexUsage } from "./usage.js";
 
+type ThemeLike = {
+  fg?: (name: string, text: string) => string;
+  bold?: (text: string) => string;
+};
+
 type CommandContext = {
   hasUI?: boolean;
   ui?: {
     notify?: (message: string, level?: "info" | "warning" | "error" | "success") => void;
     setStatus?: (key: string, text?: string) => void;
-    theme?: { fg?: (name: string, text: string) => string };
+    theme?: ThemeLike;
   };
 };
 
@@ -23,27 +29,48 @@ type PiApi = {
     },
   ) => void;
   on: (event: string, handler: (event: any, ctx: CommandContext) => Promise<void> | void) => void;
+  registerMessageRenderer?: (
+    customType: string,
+    renderer: (message: { content: string; details?: unknown }, options: unknown, theme: ThemeLike) => Text,
+  ) => void;
   sendMessage?: (
     message: { customType: string; content: string; display: boolean; details?: unknown },
     options?: { triggerTurn?: boolean; deliverAs?: "steer" | "followUp" | "nextTurn" },
   ) => void;
 };
 
+type StatusMessageDetails = {
+  kind: "status" | "json" | "raw" | "statusline";
+  snapshot: CodexUsageSnapshot;
+};
+
 const STATUS_KEY = "codex-status";
 const MESSAGE_TYPE = "codex-status";
 const CACHE_TTL_MS = 60_000;
 
+function getUi(ctx: CommandContext): CommandContext["ui"] | undefined {
+  try {
+    return ctx.ui;
+  } catch {
+    // Pi invalidates extension contexts after reload/session shutdown. Background refreshes
+    // can finish after that boundary; treat stale UI access as a no-op.
+    return undefined;
+  }
+}
+
 function dim(ctx: CommandContext, text: string): string {
-  return ctx.ui?.theme?.fg ? ctx.ui.theme.fg("dim", text) : text;
+  const ui = getUi(ctx);
+  return ui?.theme?.fg ? ui.theme.fg("dim", text) : text;
 }
 
 function setFooterStatus(ctx: CommandContext, snapshot: CodexUsageSnapshot | undefined): void {
-  if (!ctx.ui?.setStatus) return;
+  const ui = getUi(ctx);
+  if (!ui?.setStatus) return;
   if (!snapshot) {
-    ctx.ui.setStatus(STATUS_KEY, undefined);
+    ui.setStatus(STATUS_KEY, undefined);
     return;
   }
-  ctx.ui.setStatus(STATUS_KEY, dim(ctx, formatStatusline(snapshot)));
+  ui.setStatus(STATUS_KEY, dim(ctx, formatStatusline(snapshot)));
 }
 
 function mergeLimit(existing: RateLimit | undefined, update: RateLimit | undefined): RateLimit | undefined {
@@ -85,14 +112,76 @@ function mergeSnapshots(
 }
 
 function messageFor(kind: "status" | "json" | "raw" | "statusline", snapshot: CodexUsageSnapshot): string {
-  if (kind === "json") return `\`\`\`json\n${formatJson(snapshot)}\n\`\`\``;
-  if (kind === "raw") return `\`\`\`json\n${JSON.stringify(snapshot.raw ?? snapshot, null, 2)}\n\`\`\``;
-  if (kind === "statusline") return `\`\`\`\n${formatStatusline(snapshot)}\n\`\`\``;
-  return `\`\`\`\n${formatStatus(snapshot)}\n\`\`\``;
+  if (kind === "json") return formatJson(snapshot);
+  if (kind === "raw") return JSON.stringify(snapshot.raw ?? snapshot, null, 2);
+  if (kind === "statusline") return formatStatusline(snapshot);
+  return formatStatus(snapshot);
 }
 
 function unfence(content: string): string {
   return content.replace(/^```(?:json)?\n/, "").replace(/\n```$/, "");
+}
+
+function color(theme: ThemeLike, name: string, text: string): string {
+  try {
+    return theme.fg?.(name, text) ?? text;
+  } catch {
+    return text;
+  }
+}
+
+function bold(theme: ThemeLike, text: string): string {
+  try {
+    return theme.bold?.(text) ?? text;
+  } catch {
+    return text;
+  }
+}
+
+function colorForLeftPercent(leftPercent: number): "success" | "warning" | "error" {
+  if (leftPercent >= 60) return "success";
+  if (leftPercent >= 25) return "warning";
+  return "error";
+}
+
+function colorizeStatusLine(line: string, theme: ThemeLike): string {
+  let out = line;
+
+  const barMatch = line.match(/(\[[█░]+\])\s+(\d+(?:\.\d+)?)% left/);
+  if (barMatch?.[1] && barMatch[2]) {
+    const barText = barMatch[1];
+    const pctText = barMatch[2];
+    const leftPercent = Number(pctText);
+    const statusColor = colorForLeftPercent(Number.isFinite(leftPercent) ? leftPercent : 0);
+    out = out.replace(barText, color(theme, statusColor, barText));
+    out = out.replace(`${pctText}% left`, color(theme, statusColor, `${pctText}% left`));
+  }
+
+  out = out.replace(">_ Codex usage", color(theme, "accent", bold(theme, ">_ Codex usage")));
+  out = out.replace(/(Account|Updated|5h limit|Weekly limit|Credits):/g, (label) =>
+    color(theme, "muted", label),
+  );
+  out = out.replace(/(Visit https:\/\/chatgpt\.com\/codex\/settings\/usage for up-to-date|information on rate limits and credits)/g, (text) =>
+    color(theme, "dim", text),
+  );
+  out = out.replace(/(GPT-[^:]+ limit:)/g, (text) => color(theme, "accent", bold(theme, text)));
+
+  if (out.startsWith("╭") || out.startsWith("╰")) return color(theme, "dim", out);
+  if (out.startsWith("│") && out.endsWith("│")) {
+    return `${color(theme, "dim", out[0] ?? "")}${out.slice(1, -1)}${color(theme, "dim", out.at(-1) ?? "")}`;
+  }
+  return out;
+}
+
+function colorizeStatusText(content: string, theme: ThemeLike): string {
+  return unfence(content)
+    .split("\n")
+    .map((line) => colorizeStatusLine(line, theme))
+    .join("\n");
+}
+
+function renderStatusMessage(message: { content: string; details?: unknown }, _options: unknown, theme: ThemeLike): Text {
+  return new Text(colorizeStatusText(message.content, theme), 0, 0);
 }
 
 function emitStatus(pi: PiApi, ctx: CommandContext, content: string, details?: unknown): void {
@@ -129,6 +218,8 @@ function parseCommandArgs(args: string): { kind: "status" | "json" | "raw" | "st
 }
 
 export default function codexUsageExtension(pi: PiApi): void {
+  pi.registerMessageRenderer?.(MESSAGE_TYPE, renderStatusMessage);
+
   const command = {
     description: "Show ChatGPT Codex quota/limits (5h, weekly, credits)",
     getArgumentCompletions: (prefix: string) => {
@@ -158,7 +249,7 @@ export default function codexUsageExtension(pi: PiApi): void {
           includeRaw: parsed.kind === "raw",
         });
         setFooterStatus(ctx, snapshot);
-        emitStatus(pi, ctx, messageFor(parsed.kind, snapshot), snapshot);
+        emitStatus(pi, ctx, messageFor(parsed.kind, snapshot), { kind: parsed.kind, snapshot } satisfies StatusMessageDetails);
       } catch (error) {
         ctx.ui?.notify?.(`Codex usage unavailable: ${error instanceof Error ? error.message : String(error)}`, "error");
       }
