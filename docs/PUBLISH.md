@@ -30,7 +30,7 @@ Steps to publish a new version of `pi-codex-status`.
 - [ ] Update CHANGELOG with the new version section and summary of changes
 - [ ] Update `AGENTS.md` if file layout, verification commands, or conventions changed
 - [ ] Update `docs/PUBLISH.md` if release process changed
-- [ ] Confirm `package.json` metadata is correct: version, repository, files, bin aliases, keywords
+- [ ] Confirm `package.json` metadata is correct: version, repository, files, bin entries, dependencies, keywords
 - [ ] Confirm `package-lock.json` reflects package name/version changes
 
 ## Build Artifacts

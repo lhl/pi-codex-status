@@ -1,54 +1,66 @@
 # pi-codex-status
 
-Small ChatGPT Codex quota/status checker and [pi](https://pi.dev/) extension.
+ChatGPT Codex quota/status checker for [pi](https://pi.dev). It adds a `/status` command and a standalone `pi-codex-status` CLI so you can see Codex 5-hour limits, weekly limits, credits, and reset times before you hit a rate-limit error.
 
-Pi can use OpenAI Codex models through the `openai-codex` provider with a ChatGPT Plus or Pro account. In pi, run `/login` and choose the ChatGPT Plus/Pro / OpenAI Codex login, then select an `openai-codex` model. See Pi's provider docs: [OpenAI Codex](https://pi.dev/docs/latest/providers#openai-codex).
+## Why
 
-This extension reads existing OAuth credentials from `~/.pi/agent/auth.json` first, then falls back to `~/.codex/auth.json`. No separate login is required if pi or Codex CLI is already authenticated.
+Codex usage is easiest to check in the ChatGPT web UI, but that is awkward while working in a terminal. pi-codex-status brings the same kind of quota visibility into pi and scripts:
 
-## What it shows
+- **In pi** — `/status` renders a boxed, themed quota summary and updates a compact footer status.
+- **In scripts** — `pi-codex-status statusline` prints a one-line summary suitable for prompts or status bars.
+- **For automation** — `pi-codex-status json` returns normalized JSON for custom tooling.
 
-- Main Codex 5-hour window
-- Main Codex weekly window
-- Credits balance
-- Additional named/per-model limits such as `GPT-5.3-Codex-Spark`
-- Reset times in local time
+## Features
 
-## How it works
+- Shows the main Codex 5-hour and weekly windows
+- Shows credits balance and reset times in local time
+- Shows additional named/per-model limits when the backend reports them
+- Reads existing pi or Codex CLI OAuth credentials; no separate login flow
+- Self-caches status data for fast statusline calls
+- Opportunistically refreshes the cache from `x-codex-*` provider response headers
 
-Primary status data comes from ChatGPT's private Codex usage endpoint:
+## Requirements
 
-```text
-https://chatgpt.com/backend-api/codex/usage
-```
+- Node.js 20.6 or newer
+- pi with the `openai-codex` provider, or Codex CLI, already authenticated
+- A ChatGPT plan/account that can use Codex models
 
-The endpoint returns server-reported `used_percent`, `reset_at`, `limit_window_seconds`, plan, credits, and additional named limits. `pi-codex-status` normalizes that into display fields:
+In pi, run `/login`, choose the ChatGPT Plus/Pro / OpenAI Codex login, then select an `openai-codex` model. See pi's provider docs: [OpenAI Codex](https://pi.dev/docs/latest/providers#openai-codex).
 
-- `leftPercent = 100 - used_percent`
-- Reset timestamps are converted from Unix seconds to local time
-- Window durations are preserved as seconds
-- Credit balance is displayed as whole credits in the status box/statusline
-- Additional limits are rendered from `additional_rate_limits[]`
+## Install
 
-The pi extension also listens to provider responses and opportunistically parses `x-codex-primary-used-percent`, `x-codex-secondary-used-percent`, and related `x-codex-*` headers to refresh the local cache without an extra endpoint call. A `codex.rate_limits` event parser is included for compatibility with Codex's websocket shape.
-
-This is the same family of data Codex surfaces through usage status, `x-codex-*` headers, and `codex.rate_limits` events. The endpoint is private and may change. The official fallback is [ChatGPT Codex usage settings](https://chatgpt.com/codex/settings/usage).
-
-## CLI
+Install as a pi extension:
 
 ```bash
-npm install
-npm run build
-npm link
-
-pi-codex-status
-pi-codex-status status
-pi-codex-status statusline
-pi-codex-status json
-pi-codex-status raw
+pi install npm:pi-codex-status
 ```
 
-Example:
+Or install directly from GitHub:
+
+```bash
+pi install https://github.com/lhl/pi-codex-status
+```
+
+Install the standalone CLI globally:
+
+```bash
+npm install -g pi-codex-status
+```
+
+## Quick Start
+
+```text
+/status              # boxed quota summary in pi
+/status statusline   # compact one-line output in pi
+/codex-status        # alias if another extension claims /status
+```
+
+```bash
+pi-codex-status statusline
+pi-codex-status json | jq '.defaultLimit.primary.leftPercent'
+```
+
+Example boxed output:
 
 ```text
 ╭────────────────────────────────────────────────────────────────────────────────────────╮
@@ -70,14 +82,34 @@ Example:
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-Script-friendly output:
+Example statusline:
 
-```bash
-pi-codex-status json | jq '.defaultLimit.primary.leftPercent'
-pi-codex-status statusline
+```text
+Codex 5h:95% left 7d:97% left pro reset:18:43 credits:553
 ```
 
-`statusline` is self-cached through `~/.cache/pi-codex-status/usage.json` so it is safe to call from a prompt/status line.
+## Pi Commands
+
+```text
+/status              # boxed quota summary
+/status refresh      # bypass the local cache
+/status json         # normalized JSON
+/status raw          # raw backend usage response
+/status statusline   # compact one-line output
+/codex-status        # alias if another extension claims /status
+```
+
+In interactive pi, `/status` renders as a themed custom message instead of a plain markdown code block. The extension also sets a compact footer status and refreshes the local cache from Codex rate-limit headers when provider responses include them.
+
+## CLI
+
+```bash
+pi-codex-status
+pi-codex-status status
+pi-codex-status statusline
+pi-codex-status json
+pi-codex-status raw
+```
 
 Options:
 
@@ -92,39 +124,56 @@ Options:
 --no-box
 ```
 
-## Pi extension
+`statusline` is self-cached through `~/.cache/pi-codex-status/usage.json` so it is safe to call frequently from prompts and status bars.
 
-Install into pi:
+## How It Works
 
-```bash
-pi install https://github.com/lhl/pi-codex-status
-```
-
-Commands:
+Primary status data comes from ChatGPT's private Codex usage endpoint:
 
 ```text
-/status              # boxed quota summary
-/status refresh      # bypass cache
-/status json         # normalized JSON
-/status raw          # raw backend response
-/status statusline   # compact one-line output
-/codex-status        # alias, in case another extension claims /status
+https://chatgpt.com/backend-api/codex/usage
 ```
 
-In interactive pi, `/status` renders as a themed custom message instead of a plain markdown code block. The extension also sets a compact footer status such as:
+The endpoint returns server-reported `used_percent`, `reset_at`, `limit_window_seconds`, plan, credits, and additional named limits. pi-codex-status normalizes that into display fields:
+
+- `leftPercent = 100 - used_percent`
+- Reset timestamps are converted from Unix seconds to local time
+- Window durations are preserved as seconds
+- Credit balance is displayed as whole credits in the status box/statusline
+- Additional limits are rendered from `additional_rate_limits[]`
+
+The pi extension also listens to provider responses and opportunistically parses `x-codex-primary-used-percent`, `x-codex-secondary-used-percent`, and related `x-codex-*` headers to refresh the local cache without an extra endpoint call. A `codex.rate_limits` event parser is included for compatibility with Codex's websocket shape.
+
+The endpoint is private and may change. The official fallback is [ChatGPT Codex usage settings](https://chatgpt.com/codex/settings/usage).
+
+## Auth and Cache
+
+Auth lookup order:
+
+1. `~/.pi/agent/auth.json` (`openai-codex` OAuth entry)
+2. `~/.codex/auth.json` (Codex CLI OAuth entry)
+
+Access tokens may be refreshed using the stored refresh token. Tokens are not printed, logged, or stored in the status cache.
+
+Default cache path:
 
 ```text
-Codex 5h:95% left 7d:97% left pro reset:18:43 credits:553
+~/.cache/pi-codex-status/usage.json
 ```
-
-On provider responses, it opportunistically parses `x-codex-primary-used-percent`, `x-codex-secondary-used-percent`, and related `x-codex-*` headers to refresh the local cache without an extra endpoint call.
 
 ## Development
 
 ```bash
+git clone https://github.com/lhl/pi-codex-status
+cd pi-codex-status
 npm install
 npm run check
 npm test
+pi install .
 ```
 
 Release checklist: [`docs/PUBLISH.md`](docs/PUBLISH.md).
+
+## License
+
+MIT

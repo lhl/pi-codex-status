@@ -4,7 +4,7 @@
   "description": "ChatGPT Codex quota/status CLI and pi extension",
   "type": "module",
   "bin": {
-    "pi-codex-status": "./dist/cli.js"
+    "pi-codex-status": "dist/cli.js"
   },
   "exports": {
     ".": "./dist/index.js",
@@ -35,7 +35,7 @@
     "status",
     "pi"
   ],
-  "author": "Leonard Lin",
+  "author": "Leonard Lin <lhl@randomfoo.net>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -48,12 +48,11 @@
   "engines": {
     "node": ">=20.6.0"
   },
-  "peerDependencies": {
-    "@mariozechner/pi-tui": "*"
-  },
   "devDependencies": {
-    "@mariozechner/pi-tui": "^0.73.0",
     "@types/node": "^24.3.0",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@mariozechner/pi-tui": "^0.73.0"
   }
 }
