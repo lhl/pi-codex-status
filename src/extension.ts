@@ -91,7 +91,15 @@ function messageFor(kind: "status" | "json" | "raw" | "statusline", snapshot: Co
   return `\`\`\`\n${formatStatus(snapshot)}\n\`\`\``;
 }
 
+function unfence(content: string): string {
+  return content.replace(/^```(?:json)?\n/, "").replace(/\n```$/, "");
+}
+
 function emitStatus(pi: PiApi, ctx: CommandContext, content: string, details?: unknown): void {
+  if (ctx.hasUI === false) {
+    console.log(unfence(content));
+    return;
+  }
   if (pi.sendMessage) {
     pi.sendMessage({ customType: MESSAGE_TYPE, content, display: true, details }, { deliverAs: "nextTurn" });
     return;
