@@ -1,0 +1,44 @@
+{
+  "name": "pi-codex-usage",
+  "version": "0.1.0",
+  "description": "ChatGPT Codex quota/usage CLI and pi extension",
+  "type": "module",
+  "bin": {
+    "pi-codex-usage": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./extension": "./dist/extension.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/extension.js"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "pi-package",
+    "codex",
+    "chatgpt",
+    "usage",
+    "quota"
+  ],
+  "author": "Leonard Lin",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.7.3"
+  }
+}
