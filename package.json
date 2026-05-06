@@ -4,8 +4,7 @@
   "description": "ChatGPT Codex quota/status CLI and pi extension",
   "type": "module",
   "bin": {
-    "pi-codex-status": "./dist/cli.js",
-    "pi-codex-usage": "./dist/cli.js"
+    "pi-codex-status": "./dist/cli.js"
   },
   "exports": {
     ".": "./dist/index.js",

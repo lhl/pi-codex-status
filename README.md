@@ -77,7 +77,7 @@ pi-codex-status json | jq '.defaultLimit.primary.leftPercent'
 pi-codex-status statusline
 ```
 
-`statusline` is self-cached through `~/.cache/pi-codex-status/usage.json` so it is safe to call from a prompt/status line. `pi-codex-usage` is kept as a backwards-compatible CLI alias.
+`statusline` is self-cached through `~/.cache/pi-codex-status/usage.json` so it is safe to call from a prompt/status line.
 
 Options:
 

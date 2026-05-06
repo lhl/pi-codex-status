@@ -13,7 +13,6 @@ All notable changes to `pi-codex-status` will be documented here.
 
 - Initial public GitHub release.
 - Add `pi-codex-status` CLI with `status`, `statusline`, `json`, and `raw` output modes.
-- Add backwards-compatible `pi-codex-usage` CLI alias.
 - Add pi extension commands `/status` and `/codex-status`.
 - Read existing OAuth credentials from `~/.pi/agent/auth.json` or `~/.codex/auth.json`.
 - Fetch ChatGPT Codex 5h/weekly usage, credits, reset times, and additional named limits from the Codex usage endpoint.

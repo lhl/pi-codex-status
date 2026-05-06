@@ -21,7 +21,7 @@ ChatGPT Codex quota/status CLI and pi extension. Shows 5h/weekly limits, credits
 | Path | Purpose |
 |---|---|
 | `package.json` | Pi package manifest, CLI bin aliases, npm metadata |
-| `src/cli.ts` | `pi-codex-status` / `pi-codex-usage` CLI |
+| `src/cli.ts` | `pi-codex-status` CLI |
 | `src/extension.ts` | Pi extension: `/status`, `/codex-status`, footer status, header cache refresh |
 | `src/usage.ts` | ChatGPT Codex usage endpoint fetch + normalization |
 | `src/auth.ts` | pi/Codex OAuth auth-file lookup and refresh |
