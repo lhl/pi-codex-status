@@ -1,9 +1,10 @@
 {
-  "name": "pi-codex-usage",
+  "name": "pi-codex-status",
   "version": "0.1.0",
-  "description": "ChatGPT Codex quota/usage CLI and pi extension",
+  "description": "ChatGPT Codex quota/status CLI and pi extension",
   "type": "module",
   "bin": {
+    "pi-codex-status": "./dist/cli.js",
     "pi-codex-usage": "./dist/cli.js"
   },
   "exports": {
@@ -34,6 +35,14 @@
   ],
   "author": "Leonard Lin",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhl/pi-codex-status.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lhl/pi-codex-status/issues"
+  },
+  "homepage": "https://github.com/lhl/pi-codex-status#readme",
   "engines": {
     "node": ">=20.6.0"
   },

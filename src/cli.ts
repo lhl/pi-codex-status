@@ -11,13 +11,13 @@ interface CliOptions extends CacheOptions {
 }
 
 function usage(): string {
-  return `pi-codex-usage ${VERSION}
+  return `pi-codex-status ${VERSION}
 
 Usage:
-  pi-codex-usage [status] [options]
-  pi-codex-usage json [options]
-  pi-codex-usage raw [options]
-  pi-codex-usage statusline [options]
+  pi-codex-status [status] [options]
+  pi-codex-status json [options]
+  pi-codex-status raw [options]
+  pi-codex-status statusline [options]
 
 Commands:
   status      Show a Codex-style quota summary (default)
@@ -29,7 +29,7 @@ Options:
   --auth-source <auto|pi|codex>  Auth file preference (default: auto, pi first)
   --auth-file <path>             Read a specific auth.json
   --endpoint <url>               Usage endpoint (default: /backend-api/codex/usage)
-  --cache-file <path>            Cache path (default: ~/.cache/pi-codex-usage/usage.json)
+  --cache-file <path>            Cache path (default: ~/.cache/pi-codex-status/usage.json)
   --max-age <seconds>            Cache TTL (default: 60; statusline uses cache on failures)
   --no-cache                     Always fetch fresh data
   --timeout <seconds>            HTTP timeout (default: 15)
@@ -140,7 +140,7 @@ async function run(): Promise<void> {
       }
     }
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`pi-codex-usage: ${message}\n`);
+    process.stderr.write(`pi-codex-status: ${message}\n`);
     process.exitCode = 1;
   }
 }

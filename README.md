@@ -1,6 +1,6 @@
-# pi-codex-usage
+# pi-codex-status
 
-Small ChatGPT Codex quota/usage checker and [pi](https://pi.dev/) extension.
+Small ChatGPT Codex quota/status checker and [pi](https://pi.dev/) extension.
 
 It reads existing OAuth credentials from `~/.pi/agent/auth.json` first, then falls back to `~/.codex/auth.json`. No new login is required if pi or Codex CLI is already authenticated.
 
@@ -27,11 +27,11 @@ npm install
 npm run build
 npm link
 
-pi-codex-usage
-pi-codex-usage status
-pi-codex-usage statusline
-pi-codex-usage json
-pi-codex-usage raw
+pi-codex-status
+pi-codex-status status
+pi-codex-status statusline
+pi-codex-status json
+pi-codex-status raw
 ```
 
 Example:
@@ -59,11 +59,11 @@ Example:
 Script-friendly output:
 
 ```bash
-pi-codex-usage json | jq '.defaultLimit.primary.leftPercent'
-pi-codex-usage statusline
+pi-codex-status json | jq '.defaultLimit.primary.leftPercent'
+pi-codex-status statusline
 ```
 
-`statusline` is self-cached through `~/.cache/pi-codex-usage/usage.json` so it is safe to call from a prompt/status line.
+`statusline` is self-cached through `~/.cache/pi-codex-status/usage.json` so it is safe to call from a prompt/status line. `pi-codex-usage` is kept as a backwards-compatible CLI alias.
 
 Options:
 
@@ -83,7 +83,7 @@ Options:
 Install the local package into pi:
 
 ```bash
-pi install /home/lhl/pi-codex-usage
+pi install https://github.com/lhl/pi-codex-status
 ```
 
 Commands:

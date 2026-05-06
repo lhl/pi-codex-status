@@ -4,7 +4,7 @@ import type { CodexUsageSnapshot } from "./types.js";
 
 export function defaultCacheFile(): string {
   const base = process.env.XDG_CACHE_HOME || join(process.env.HOME || process.env.USERPROFILE || ".", ".cache");
-  return join(base, "pi-codex-usage", "usage.json");
+  return join(base, "pi-codex-status", "usage.json");
 }
 
 export async function readCachedSnapshot(path = defaultCacheFile()): Promise<CodexUsageSnapshot | undefined> {

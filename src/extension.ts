@@ -29,8 +29,8 @@ type PiApi = {
   ) => void;
 };
 
-const STATUS_KEY = "codex-usage";
-const MESSAGE_TYPE = "codex-usage";
+const STATUS_KEY = "codex-status";
+const MESSAGE_TYPE = "codex-status";
 const CACHE_TTL_MS = 60_000;
 
 function dim(ctx: CommandContext, text: string): string {

@@ -178,7 +178,7 @@ export async function fetchCodexUsage(options: FetchUsageOptions = {}): Promise<
           authorization: `Bearer ${auth.accessToken}`,
           ...(auth.accountId ? { "chatgpt-account-id": auth.accountId } : {}),
           accept: "application/json",
-          "user-agent": "pi-codex-usage/0.1.0",
+          "user-agent": "pi-codex-status/0.1.0",
         },
       },
       options.timeoutMs ?? 15_000,
