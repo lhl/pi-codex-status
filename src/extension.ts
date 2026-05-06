@@ -101,7 +101,9 @@ function emitStatus(pi: PiApi, ctx: CommandContext, content: string, details?: u
     return;
   }
   if (pi.sendMessage) {
-    pi.sendMessage({ customType: MESSAGE_TYPE, content, display: true, details }, { deliverAs: "nextTurn" });
+    // No delivery options while idle: append and emit immediately. `deliverAs: "nextTurn"`
+    // only queues the message for the next user prompt, which makes slash commands look silent.
+    pi.sendMessage({ customType: MESSAGE_TYPE, content, display: true, details });
     return;
   }
   ctx.ui?.notify?.(content, "info");
