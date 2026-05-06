@@ -5,6 +5,8 @@ All notable changes to `pi-codex-status` will be documented here.
 ## [Unreleased]
 
 - Add release checklist and agent guide for future polish/publish passes.
+- Document pi `openai-codex` provider setup with `/login` and ChatGPT Plus/Pro.
+- Explain how status values are sourced and normalized from the Codex usage endpoint and `x-codex-*` headers.
 
 ## [0.1.0] - 2026-05-06
 

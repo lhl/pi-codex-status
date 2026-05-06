@@ -2,7 +2,9 @@
 
 Small ChatGPT Codex quota/status checker and [pi](https://pi.dev/) extension.
 
-It reads existing OAuth credentials from `~/.pi/agent/auth.json` first, then falls back to `~/.codex/auth.json`. No new login is required if pi or Codex CLI is already authenticated.
+Pi can use OpenAI Codex models through the `openai-codex` provider with a ChatGPT Plus or Pro account. In pi, run `/login` and choose the ChatGPT Plus/Pro / OpenAI Codex login, then select an `openai-codex` model. See Pi's provider docs: [OpenAI Codex](https://pi.dev/docs/latest/providers#openai-codex).
+
+This extension reads existing OAuth credentials from `~/.pi/agent/auth.json` first, then falls back to `~/.codex/auth.json`. No separate login is required if pi or Codex CLI is already authenticated.
 
 ## What it shows
 
@@ -12,13 +14,25 @@ It reads existing OAuth credentials from `~/.pi/agent/auth.json` first, then fal
 - Additional named/per-model limits such as `GPT-5.3-Codex-Spark`
 - Reset times in local time
 
-Data comes from ChatGPT's private Codex usage endpoint:
+## How it works
+
+Primary status data comes from ChatGPT's private Codex usage endpoint:
 
 ```text
 https://chatgpt.com/backend-api/codex/usage
 ```
 
-This is the same family of data Codex surfaces through usage status, `x-codex-*` headers, and `codex.rate_limits` events. The endpoint is private and may change.
+The endpoint returns server-reported `used_percent`, `reset_at`, `limit_window_seconds`, plan, credits, and additional named limits. `pi-codex-status` normalizes that into display fields:
+
+- `leftPercent = 100 - used_percent`
+- Reset timestamps are converted from Unix seconds to local time
+- Window durations are preserved as seconds
+- Credit balance is displayed as whole credits in the status box/statusline
+- Additional limits are rendered from `additional_rate_limits[]`
+
+The pi extension also listens to provider responses and opportunistically parses `x-codex-primary-used-percent`, `x-codex-secondary-used-percent`, and related `x-codex-*` headers to refresh the local cache without an extra endpoint call. A `codex.rate_limits` event parser is included for compatibility with Codex's websocket shape.
+
+This is the same family of data Codex surfaces through usage status, `x-codex-*` headers, and `codex.rate_limits` events. The endpoint is private and may change. The official fallback is [ChatGPT Codex usage settings](https://chatgpt.com/codex/settings/usage).
 
 ## CLI
 
