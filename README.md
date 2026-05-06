@@ -1,10 +1,10 @@
 # pi-codex-status
 
-ChatGPT Codex quota/status checker for [pi](https://pi.dev). It adds a `/status` command and a standalone `pi-codex-status` CLI so you can see Codex 5-hour limits, weekly limits, credits, and reset times before you hit a rate-limit error.
+ChatGPT Codex quota/status checker for [pi](https://pi.dev). Adds a `/status` command and a standalone `pi-codex-status` CLI so you can see Codex 5-hour limits, weekly limits, credits, and reset times before you hit a rate-limit error.
 
 ## Why
 
-Codex usage is easiest to check in the ChatGPT web UI, but that is awkward while working in a terminal. pi-codex-status brings the same kind of quota visibility into pi and scripts:
+This replicates Codex' `/status` info that you otherwise can't see by default in pi.  It also provides the data so you can put it in your statusline or anywhere else you want to use it:
 
 - **In pi** — `/status` renders a boxed, themed quota summary and updates a compact footer status.
 - **In scripts** — `pi-codex-status statusline` prints a one-line summary suitable for prompts or status bars.
