@@ -21,7 +21,7 @@ test("formatReset includes date for later days", () => {
   assert.equal(formatReset(reset, now), "resets 19:18 on 12 May");
 });
 
-test("statusline includes left percentages, plan, reset, credits", () => {
+test("statusline includes compact left percentages and weekly reset", () => {
   const snapshot = {
     schemaVersion: 1,
     source: "api",
@@ -31,12 +31,12 @@ test("statusline includes left percentages, plan, reset, credits", () => {
       id: "codex",
       name: "Codex",
       primary: { usedPercent: 5, leftPercent: 95, resetAt: new Date(2026, 4, 6, 18, 43, 0).getTime() / 1000 },
-      secondary: { usedPercent: 3, leftPercent: 97 },
+      secondary: { usedPercent: 3, leftPercent: 97, resetAt: new Date(2026, 4, 12, 6, 0, 0).getTime() / 1000 },
     },
     additionalLimits: [],
     credits: { balance: "553.4500" },
   };
-  assert.equal(formatStatusline(snapshot, new Date(2026, 4, 6, 12, 0, 0)), "Codex 5h:95% left 7d:97% left pro reset:18:43 credits:553");
+  assert.equal(formatStatusline(snapshot, new Date(2026, 4, 6, 12, 0, 0)), "5h:95% 7d:97% ↺5d18h");
 });
 
 test("parses x-codex rate-limit headers", () => {

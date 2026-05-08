@@ -2,7 +2,7 @@ import { resolveAuth, refreshAuth } from "./auth.js";
 import { defaultCacheFile, isFresh, readCachedSnapshot, writeCachedSnapshot } from "./cache.js";
 import { SCHEMA_VERSION, type ApiRateLimit, type ApiUsageResponse, type CacheOptions, type CodexUsageSnapshot, type FetchUsageOptions, type LimitWindow, type RateLimit } from "./types.js";
 
-export const DEFAULT_USAGE_ENDPOINT = "https://chatgpt.com/backend-api/codex/usage";
+export const DEFAULT_USAGE_ENDPOINT = "https://chatgpt.com/backend-api/wham/usage";
 
 function numberValue(value: unknown): number | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
@@ -76,7 +76,7 @@ export function normalizeApiUsage(
   api: ApiUsageResponse,
   meta: {
     endpoint?: string;
-    authSource?: "pi" | "codex";
+    authSource?: "multicodex" | "pi" | "codex";
     includeRaw?: boolean;
   } = {},
 ): CodexUsageSnapshot {

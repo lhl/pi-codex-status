@@ -1,7 +1,7 @@
 import type { AuthSource } from "./types.js";
 export declare const OPENAI_CODEX_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 export interface AuthCredentials {
-    source: "pi" | "codex";
+    source: "multicodex" | "pi" | "codex";
     path: string;
     accessToken: string;
     refreshToken?: string;

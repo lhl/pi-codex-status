@@ -15,7 +15,7 @@ This replicates Codex' `/status` info that you otherwise can't see by default in
 - Shows the main Codex 5-hour and weekly windows
 - Shows credits balance and reset times in local time
 - Shows additional named/per-model limits when the backend reports them
-- Reads existing pi or Codex CLI OAuth credentials; no separate login flow
+- Reads existing MultiCodex, pi, or Codex CLI OAuth credentials; no separate login flow
 - Self-caches status data for fast statusline calls
 - Opportunistically refreshes the cache from `x-codex-*` provider response headers
 
@@ -85,7 +85,7 @@ Example boxed output:
 Example statusline:
 
 ```text
-Codex 5h:95% left 7d:97% left pro reset:18:43 credits:553
+5h:95% 7d:97% ↺6d18h
 ```
 
 ## Pi Commands
@@ -114,7 +114,7 @@ pi-codex-status raw
 Options:
 
 ```text
---auth-source auto|pi|codex
+--auth-source auto|multicodex|pi|codex
 --auth-file PATH
 --endpoint URL
 --cache-file PATH
@@ -131,7 +131,7 @@ Options:
 Primary status data comes from ChatGPT's private Codex usage endpoint:
 
 ```text
-https://chatgpt.com/backend-api/codex/usage
+https://chatgpt.com/backend-api/wham/usage
 ```
 
 The endpoint returns server-reported `used_percent`, `reset_at`, `limit_window_seconds`, plan, credits, and additional named limits. pi-codex-status normalizes that into display fields:
@@ -139,7 +139,7 @@ The endpoint returns server-reported `used_percent`, `reset_at`, `limit_window_s
 - `leftPercent = 100 - used_percent`
 - Reset timestamps are converted from Unix seconds to local time
 - Window durations are preserved as seconds
-- Credit balance is displayed as whole credits in the status box/statusline
+- Credit balance is displayed as whole credits in the status box; statusline output stays compact
 - Additional limits are rendered from `additional_rate_limits[]`
 
 The pi extension also listens to provider responses and opportunistically parses `x-codex-primary-used-percent`, `x-codex-secondary-used-percent`, and related `x-codex-*` headers to refresh the local cache without an extra endpoint call. A `codex.rate_limits` event parser is included for compatibility with Codex's websocket shape.
@@ -150,8 +150,9 @@ The endpoint is private and may change. The official fallback is [ChatGPT Codex 
 
 Auth lookup order:
 
-1. `~/.pi/agent/auth.json` (`openai-codex` OAuth entry)
-2. `~/.codex/auth.json` (Codex CLI OAuth entry)
+1. `~/.pi/agent/codex-accounts.json` (MultiCodex active managed account)
+2. `~/.pi/agent/auth.json` (`openai-codex` OAuth entry)
+3. `~/.codex/auth.json` (Codex CLI OAuth entry)
 
 Access tokens may be refreshed using the stored refresh token. Tokens are not printed, logged, or stored in the status cache.
 

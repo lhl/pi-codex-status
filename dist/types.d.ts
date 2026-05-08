@@ -1,5 +1,5 @@
 export declare const SCHEMA_VERSION = 1;
-export type AuthSource = "auto" | "pi" | "codex";
+export type AuthSource = "auto" | "multicodex" | "pi" | "codex";
 export interface LimitWindow {
     usedPercent: number;
     leftPercent: number;
@@ -39,7 +39,7 @@ export interface CodexUsageSnapshot {
     source: "api" | "headers" | "event" | "cache";
     fetchedAt: string;
     endpoint?: string;
-    authSource?: "pi" | "codex";
+    authSource?: "multicodex" | "pi" | "codex";
     account: AccountSnapshot;
     defaultLimit?: RateLimit;
     additionalLimits: RateLimit[];

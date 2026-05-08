@@ -2,6 +2,12 @@
 
 All notable changes to `pi-codex-status` will be documented here.
 
+## Unreleased
+
+- Prefer the active MultiCodex managed account from `~/.pi/agent/codex-accounts.json` before falling back to pi or Codex CLI auth.
+- Switch the default usage endpoint to ChatGPT's current `/backend-api/wham/usage` path.
+- Condense `statusline` output to `5h:95% 7d:97% ↺6d18h` style.
+
 ## [0.1.0] - 2026-05-06
 
 - Initial public GitHub release.

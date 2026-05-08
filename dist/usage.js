@@ -1,7 +1,7 @@
 import { resolveAuth, refreshAuth } from "./auth.js";
 import { defaultCacheFile, isFresh, readCachedSnapshot, writeCachedSnapshot } from "./cache.js";
 import { SCHEMA_VERSION } from "./types.js";
-export const DEFAULT_USAGE_ENDPOINT = "https://chatgpt.com/backend-api/codex/usage";
+export const DEFAULT_USAGE_ENDPOINT = "https://chatgpt.com/backend-api/wham/usage";
 function numberValue(value) {
     if (typeof value !== "number" || !Number.isFinite(value))
         return undefined;

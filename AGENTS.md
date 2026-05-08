@@ -1,6 +1,6 @@
 # pi-codex-status — Agent Guide
 
-ChatGPT Codex quota/status CLI and pi extension. Shows 5h/weekly limits, credits, reset times, and additional named limits from existing pi/Codex OAuth credentials.
+ChatGPT Codex quota/status CLI and pi extension. Shows 5h/weekly limits, credits, reset times, and additional named limits from existing MultiCodex/pi/Codex OAuth credentials.
 
 ## Non-Negotiables
 
@@ -24,7 +24,7 @@ ChatGPT Codex quota/status CLI and pi extension. Shows 5h/weekly limits, credits
 | `src/cli.ts` | `pi-codex-status` CLI |
 | `src/extension.ts` | Pi extension: `/status`, `/codex-status`, footer status, header cache refresh |
 | `src/usage.ts` | ChatGPT Codex usage endpoint fetch + normalization |
-| `src/auth.ts` | pi/Codex OAuth auth-file lookup and refresh |
+| `src/auth.ts` | MultiCodex/pi/Codex OAuth auth-file lookup and refresh |
 | `src/rate-limits.ts` | `x-codex-*` header and `codex.rate_limits` parser |
 | `src/format.ts` | Boxed status, statusline, reset/bar formatting |
 | `src/cache.ts` | Self-cache path and cache helpers |
@@ -36,7 +36,7 @@ ChatGPT Codex quota/status CLI and pi extension. Shows 5h/weekly limits, credits
 
 ### Data Sources
 
-1. Primary idle-time source: `GET https://chatgpt.com/backend-api/codex/usage`
+1. Primary idle-time source: `GET https://chatgpt.com/backend-api/wham/usage`
 2. Opportunistic in-session source: `x-codex-*` response headers parsed from pi's `after_provider_response` hook
 3. Future/available parser: `codex.rate_limits` websocket event parsing in `src/rate-limits.ts`
 
@@ -46,8 +46,9 @@ The ChatGPT backend endpoint is private/reverse-engineered. Keep docs explicit t
 
 Lookup order:
 
-1. `~/.pi/agent/auth.json` (`openai-codex` OAuth entry)
-2. `~/.codex/auth.json` (Codex CLI OAuth entry)
+1. `~/.pi/agent/codex-accounts.json` (MultiCodex active managed account)
+2. `~/.pi/agent/auth.json` (`openai-codex` OAuth entry)
+3. `~/.codex/auth.json` (Codex CLI OAuth entry)
 
 Access tokens may be refreshed using the stored refresh token. Never expose token values in test output, logs, README examples, GitHub issues, or commits.
 

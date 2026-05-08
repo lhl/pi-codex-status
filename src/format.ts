@@ -44,7 +44,7 @@ export function formatDuration(seconds: number | undefined): string {
   const days = Math.floor(rounded / 86_400);
   const hours = Math.floor((rounded % 86_400) / 3600);
   const minutes = Math.floor((rounded % 3600) / 60);
-  if (days > 0) return `${days}d${hours ? ` ${hours}h` : ""}`;
+  if (days > 0) return `${days}d${hours ? `${hours}h` : ""}`;
   if (hours > 0) return `${hours}h${minutes ? `${minutes}m` : ""}`;
   return `${minutes || 1}m`;
 }
@@ -126,21 +126,22 @@ export function formatStatus(snapshot: CodexUsageSnapshot, options: FormatOption
   return options.box === false ? lines.join("\n") : makeBox(lines, options.width);
 }
 
+function resetSeconds(window: LimitWindow | undefined, now: Date): number | undefined {
+  if (!window) return undefined;
+  if (window.resetAfterSeconds !== undefined) return window.resetAfterSeconds;
+  if (window.resetAt !== undefined) return Math.max(0, Math.round(window.resetAt - now.getTime() / 1000));
+  return undefined;
+}
+
 export function formatStatusline(snapshot: CodexUsageSnapshot, now = new Date()): string {
   const parts: string[] = [];
-  const plan = snapshot.account.plan;
   const primary = snapshot.defaultLimit?.primary;
   const secondary = snapshot.defaultLimit?.secondary;
-  if (primary) parts.push(`5h:${pct(primary.leftPercent)} left`);
-  if (secondary) parts.push(`7d:${pct(secondary.leftPercent)} left`);
-  if (plan) parts.push(plan);
-  const reset = primary ? formatReset(primary.resetAt, now).replace(/^resets /, "reset:") : "";
-  if (reset) parts.push(reset);
-  if (snapshot.credits?.balance !== undefined) {
-    const value = Number(snapshot.credits.balance);
-    parts.push(`credits:${Number.isFinite(value) ? Math.floor(value).toLocaleString() : snapshot.credits.balance}`);
-  }
-  return parts.length > 0 ? `Codex ${parts.join(" ")}` : "Codex usage unavailable";
+  if (primary) parts.push(`5h:${pct(primary.leftPercent)}`);
+  if (secondary) parts.push(`7d:${pct(secondary.leftPercent)}`);
+  const reset = formatDuration(resetSeconds(secondary ?? primary, now));
+  if (reset) parts.push(`↺${reset}`);
+  return parts.length > 0 ? parts.join(" ") : "Codex usage unavailable";
 }
 
 export function formatJson(snapshot: CodexUsageSnapshot): string {

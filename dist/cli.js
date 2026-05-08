@@ -19,9 +19,10 @@ Commands:
   statusline  Print one compact self-cached line
 
 Options:
-  --auth-source <auto|pi|codex>  Auth file preference (default: auto, pi first)
+  --auth-source <auto|multicodex|pi|codex>
+                                  Auth file preference (default: auto, MultiCodex first)
   --auth-file <path>             Read a specific auth.json
-  --endpoint <url>               Usage endpoint (default: /backend-api/codex/usage)
+  --endpoint <url>               Usage endpoint (default: /backend-api/wham/usage)
   --cache-file <path>            Cache path (default: ~/.cache/pi-codex-status/usage.json)
   --max-age <seconds>            Cache TTL (default: 60; statusline uses cache on failures)
   --no-cache                     Always fetch fresh data
@@ -66,8 +67,8 @@ function parseArgs(argv) {
             options.box = false;
         else if (arg === "--auth-source") {
             const [value, next] = takeValue(args, i, arg);
-            if (value !== "auto" && value !== "pi" && value !== "codex") {
-                throw new Error("--auth-source must be auto, pi, or codex");
+            if (value !== "auto" && value !== "multicodex" && value !== "pi" && value !== "codex") {
+                throw new Error("--auth-source must be auto, multicodex, pi, or codex");
             }
             options.authSource = value;
             i = next;

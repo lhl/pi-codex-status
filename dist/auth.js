@@ -75,10 +75,50 @@ function parseCodexAuth(raw, path) {
         raw,
     };
 }
+function isRecord(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+function parseMulticodexAuth(raw, path) {
+    const accounts = Array.isArray(raw.accounts) ? raw.accounts.filter(isRecord) : [];
+    if (accounts.length === 0)
+        return undefined;
+    const activeEmail = stringField(raw.activeEmail);
+    const active = activeEmail ? accounts.find((account) => account.email === activeEmail) : undefined;
+    const fallback = accounts.find((account) => !account.needsReauth);
+    const account = active ?? fallback;
+    if (!account)
+        return undefined;
+    const accessToken = stringField(account.accessToken);
+    if (!accessToken)
+        return undefined;
+    const claims = extractAccountClaims(accessToken);
+    const refreshToken = stringField(account.refreshToken);
+    const accountId = stringField(account.accountId) ?? claims.accountId;
+    const expiresAtMs = numberField(account.expiresAt) ?? claims.expiresAtMs;
+    const email = stringField(account.email) ?? claims.email;
+    return {
+        source: "multicodex",
+        path,
+        accessToken,
+        ...(refreshToken !== undefined ? { refreshToken } : {}),
+        ...(accountId !== undefined ? { accountId } : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(claims.plan !== undefined ? { plan: claims.plan } : {}),
+        ...(expiresAtMs !== undefined ? { expiresAtMs } : {}),
+        raw,
+    };
+}
 async function tryReadSource(source, authFile) {
-    const path = authFile ?? (source === "pi" ? homePath(".pi/agent/auth.json") : homePath(".codex/auth.json"));
+    const path = authFile ??
+        (source === "multicodex"
+            ? homePath(".pi/agent/codex-accounts.json")
+            : source === "pi"
+                ? homePath(".pi/agent/auth.json")
+                : homePath(".codex/auth.json"));
     try {
         const raw = await readJson(path);
+        if (source === "multicodex")
+            return parseMulticodexAuth(raw, path);
         return source === "pi" ? parsePiAuth(raw, path) : parseCodexAuth(raw, path);
     }
     catch {
@@ -86,19 +126,22 @@ async function tryReadSource(source, authFile) {
     }
 }
 export async function resolveAuth(options = {}) {
-    if (options.source === "pi" || options.source === "codex") {
+    if (options.source === "multicodex" || options.source === "pi" || options.source === "codex") {
         const auth = await tryReadSource(options.source, options.authFile);
         if (!auth)
             throw new Error(`No usable ${options.source} Codex OAuth credentials found`);
         return refreshIfNeeded(auth, options.refreshSkewMs);
     }
+    const multicodex = await tryReadSource("multicodex", options.authFile);
+    if (multicodex)
+        return refreshIfNeeded(multicodex, options.refreshSkewMs);
     const pi = await tryReadSource("pi", options.authFile);
     if (pi)
         return refreshIfNeeded(pi, options.refreshSkewMs);
     const codex = await tryReadSource("codex", options.authFile);
     if (codex)
         return refreshIfNeeded(codex, options.refreshSkewMs);
-    throw new Error("No usable Codex OAuth credentials found. Run pi /login for OpenAI Codex or `codex login` first.");
+    throw new Error("No usable Codex OAuth credentials found. Run /multicodex use, pi /login for OpenAI Codex, or `codex login` first.");
 }
 export function shouldRefresh(auth, refreshSkewMs = DEFAULT_REFRESH_SKEW_MS) {
     if (!auth.refreshToken)
@@ -160,7 +203,21 @@ export async function refreshAuth(auth) {
 async function persistRefresh(auth, refreshed) {
     // Re-read so we do not overwrite unrelated auth changes made after resolveAuth().
     const raw = await readJson(auth.path).catch(() => auth.raw);
-    if (auth.source === "pi") {
+    if (auth.source === "multicodex") {
+        const accounts = Array.isArray(raw.accounts) ? raw.accounts.filter(isRecord) : [];
+        const account = accounts.find((candidate) => candidate.email === auth.email || (auth.accountId && candidate.accountId === auth.accountId));
+        if (account) {
+            account.accessToken = auth.accessToken;
+            if (auth.refreshToken)
+                account.refreshToken = auth.refreshToken;
+            if (auth.expiresAtMs)
+                account.expiresAt = auth.expiresAtMs;
+            if (auth.accountId)
+                account.accountId = auth.accountId;
+            delete account.needsReauth;
+        }
+    }
+    else if (auth.source === "pi") {
         const entry = raw["openai-codex"];
         if (entry && typeof entry === "object" && !Array.isArray(entry)) {
             const obj = entry;
@@ -190,7 +247,7 @@ async function persistRefresh(auth, refreshed) {
     await writeJsonAtomic(auth.path, raw);
 }
 export function authSearchPaths() {
-    return [homePath(".pi/agent/auth.json"), homePath(".codex/auth.json")];
+    return [homePath(".pi/agent/codex-accounts.json"), homePath(".pi/agent/auth.json"), homePath(".codex/auth.json")];
 }
 export async function ensureAuthDirectory(path) {
     await import("node:fs/promises").then((fs) => fs.mkdir(dirname(path), { recursive: true }));
